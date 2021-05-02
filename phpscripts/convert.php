@@ -1,61 +1,45 @@
 <?php
-$handle  = fopen('php://input', 'r');
-$rawData = '';
-while ($chunk = fread($handle, 1024)) {
-    $rawData .= $chunk;
+
+$input_lines = file_get_contents($_FILES['filename']['tmp_name']);
+if ($input_lines) {
+
+// 1. IP с которого пришел запрос (127.0.0.1)
+// 2. Дату и время (01/May/2021:21:05:26 +0400)
+// 3. Тип запроса, пост или гет (GET)
+// 4. Код ответа (200)
+// 5. ??? (2166)
+// 6. Референциальнаая ссылка (http://ahb/)
+// 7. User-Agent (Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36)
+$pattern = '/(\d+.\d+.\d+.\d+) \[(.+)\] "([^"]*)" (\d+) (\d+) "(.*?[^\\ ])" "(.+)"/';
+preg_match_all($pattern, $input_lines, $output_array, PREG_SET_ORDER);
+
+// Если нужен другой формат, работает со строками
+// $date = date_create($output_array1[2]);
+// $output_array1[2] = date_format($date, 'Y-m-d H:i:s');
+
+// echo '<pre>';
+// var_dump($output_array);
+
+$fp = fopen( '../files/output_file.csv', 'w' );
+foreach ( $output_array as $request ) {
+    unset($request[0]);
+    fputcsv( $fp, $request );
+ }
+fclose( $fp );
+
+$result = array(
+    'message'  => 'Успешно',
+    'data'  => $data,
+  );
+
+} else {
+$result = array(
+    'message'  => 'Ошибка входящих данных',
+    'data'  => $data,
+  );
 }
-
-parse_str($rawData, $data);
-
-// header ( "Expires: Mon, 1 Apr 1974 05:00:00 GMT" );
-// // Последнее изменение
-// header ( "Last-Modified: " . gmdate("D,d M YH:i:s") . " GMT" );
-// header ( "Cache-Control: no-cache, must-revalidate" );
-// header ( "Pragma: no-cache" );
-// // Будем передавать XLS
-// header ( "Content-type: application/vnd.ms-excel" );
-// // Он будет называться report.xls
-// header ( "Content-Disposition: attachment; filename=" . $_POST['report'] . ".xls" );
-
-
-// // выполнение подключения
-// try {
-//   $db = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
-//   $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-
-// $csv_output ='<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-// <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-// <head>
-// <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-// </head>
-// <body>';
-
-// $report = $db->query($sql);
-
-// // Теперь данные в виде таблицы:
-
-// $csv_output .='<table border="1">
-// <tr>
-// 	<td>Имя</td>
-// 	<td>Коммент</td>
-// 	<td>Кол-во Олкоинов</td>
-// 	<td>Дата</td>	
-// 	<td>Статус</td>	
-// </tr>';
-
-// while ($row = $report->fetch()) {
-// 		$csv_output .= '<tr>
-// 		<td>' . $row['surname'] . ' '. $row['name'] . ' ' . $row['patronymic'] . '</td>
-// 		<td>' . $row['comment'] . '</td>
-// 		<td>' . $row['olkoin'] . '</td>
-// 		<td>' . date('Y-m-d', strtotime($row['date'])) . '</td>
-// 		<td>' . (($row['confirmed']) ? 'Выполнен' : 'Не выполнен') . '</td>
-// 		</tr>';
-// }
-
-// $csv_output .='</table></body></html>';
-
-// echo $csv_output;
+header('Content-Type: application/json');
+echo json_encode($result, JSON_UNESCAPED_UNICODE);
+exit();
 
 ?>

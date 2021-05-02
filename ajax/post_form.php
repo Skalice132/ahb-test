@@ -2,29 +2,54 @@
 
 header('Content-Type: application/json');
 
-require_once '../database/db_config.local.php';
+$md5code = $_POST['check'];
+$code = $_POST['digits'];
+$check_code = $md5code === md5($code);
 
+if ($_POST['firstname'] && $_POST['lastname'] && $check_code) {
 
-$data = [
-  'firstname' => $_POST['firstname'],
-  'lastname' => $_POST['lastname'],
-  'patronomic' => $_POST['patronomic'],
-  'phone' => $_POST['phone'],
-  'email' => $_POST['email'],
-];
+  require_once '../database/db_config.local.php';
 
-// Очень плохо
-$user = $dbh
-->prepare ("
-  INSERT INTO users (firstname, lastname, patronomic, phone, email) 
-  VALUES (:firstname, :lastname, :patronomic, :phone, :email)
-  ")
-->execute($data);
+  $data = [
+    'firstname' => $_POST['firstname'],
+    'lastname' => $_POST['lastname'],
+    'patronomic' => $_POST['patronomic'],
+    'phone' => $_POST['phone'],
+    'email' => $_POST['email'],
+    'text' => $_POST['text'],
+  ];
 
+  $user = $dbh
+  ->prepare ("
+    INSERT INTO users (firstname, lastname, patronomic, phone, email, text) 
+    VALUES (:firstname, :lastname, :patronomic, :phone, :email, :text)
+    ")
+  ->execute($data);
 
-$result = array(
-  'data'  => $data,
-);
+  if ($user) {
 
-echo json_encode($result);
+   $result = array(
+    'message'  => 'Запись успешна',
+    'data'  => $data,
+  );
+
+ } else {
+  $result = array(
+    'message'  => 'Ошибка записи',
+    'data'  => $data,
+  );
+}
+
+} else {
+
+  $result = array(
+    'message'  => 'Ошибка входящих данных',
+    'data'  => $data,
+  );
+
+}
+
+echo json_encode($result, JSON_UNESCAPED_UNICODE);
+exit();
+
 ?>
